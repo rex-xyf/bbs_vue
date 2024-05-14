@@ -2,7 +2,26 @@
   <div>
     <el-container>
       <el-header>
-        <h1>My Forum</h1>
+        <div>
+          <h1 style="display:inline-block; margin-right: 20px;">My Forum</h1>
+          <!-- 搜索框 -->
+          <el-input
+            v-model="searchKeyword"
+            placeholder="Search Posts"
+            style="width: 200px;"
+          ></el-input>
+          <el-button type="primary" @click="search">search</el-button>
+          <el-button type="primary" @click="reset">reset</el-button>
+          <span v-if="loggedIn" style="margin-left: 40% ">
+            <el-avatar :size="40" :src="userAvatarSrc" style="margin-right: 10px; vertical-align: middle;"></el-avatar>
+            <span>{{ username }}</span>
+            <el-button type="text" @click="logout">Logout</el-button>
+          </span>
+          <span v-else style="margin-left: 50% ">
+            <el-avatar :size="40" icon="el-icon-user" style="margin-right: 10px; vertical-align: middle;"></el-avatar>
+            <span @click="goToLogin">Please log in</span>
+          </span>
+        </div>
       </el-header>
       <el-main>
         <!-- 帖子列表 -->
@@ -15,6 +34,16 @@
             <el-card :body-style="{ padding: '20px' }">
               <h3>{{ post.title }}</h3>
               <p>{{ post.content }}</p>
+              <div v-for="image in post.images" :key="image.id" style=" width: 150px;height: 150px;overflow: hidden; 
+              display: inline-block; margin-right: 20px;">
+                <el-image
+                                style="width: 100%; height: auto; object-fit: cover;"
+                                :src="require('./img/'+image.url)"
+                                :preview-src-list="[require('./img/'+image.url)]"
+                                
+                        >
+                </el-image>
+              </div>
               <p>Author: {{ post.author }}</p>
               <p>Posted at: {{ post.created_time }}</p>
               <el-button type="text" @click="showPostDetails(post)">Read More</el-button>
@@ -27,47 +56,74 @@
           <div class="post-details">
             <h2>{{ selectedPost.title }}</h2>
             <p>{{ selectedPost.content }}</p>
+            <div v-for="image in selectedPost.images" :key="image.id" style=" width: 150px;height: 150px;overflow: hidden; 
+              display: inline-block; margin-right: 20px;">
+                <el-image
+                                style="width: 100%; height: auto; object-fit: cover;"
+                                :src="require('./img/'+image.url)"
+                                :preview-src-list="[require('./img/'+image.url)]"
+                                
+                        >
+                </el-image>
+            </div>
             <p>Author: {{ selectedPost.author }}</p>
             <p>Posted at: {{ selectedPost.created_time }}</p>
             <el-divider></el-divider>
             <h3>Comments</h3>
             <div class="comment" v-for="(comment, index) in comments" :key="index">
               <p>{{ comment.text }}</p>
-              <p>{{ comment.author }} - {{ comment.created_time }}</p>
+              <div v-for="image in comment.images" :key="image.id" style=" width: 150px;height: 150px;overflow: hidden; 
+              display: inline-block; margin-right: 20px;">
+                <el-image
+                                style="width: 100%; height: auto; object-fit: cover;"
+                                :src="require('./img/'+image.url)"
+                                :preview-src-list="[require('./img/'+image.url)]"
+                                
+                        >
+                </el-image>
+              </div>
+              <p>Author: {{ comment.author }}</p>
+              <p>Commented at: {{ comment.created_time }}</p>
             </div>
             <el-divider></el-divider>
-            <el-form :model="newComment" inline>
-              <el-form-item>
-                <el-input v-model="newComment.author" placeholder="Your Name"></el-input>
-              </el-form-item>
-              <el-form-item>
-                <el-input v-model="newComment.text" placeholder="Your Comment"></el-input>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="addComment">Add Comment</el-button>
-              </el-form-item>
-            </el-form>
-            <el-button @click="goBack">Back to Posts</el-button>
+            <el-input
+              v-model="newComment.text"
+              type="textarea"
+              placeholder="Add a comment"
+            ></el-input>
+            <el-upload
+              action="http://127.0.0.1:5000/upload"
+              list-type="picture-card"
+              :on-success="handleCommentImageUpload"
+              :file-list="newComment.images"
+            >
+              <i class="el-icon-plus"></i>
+            </el-upload>
+            <el-button type="primary" @click="addComment">Submit</el-button>
+            <el-button @click="backToList">Back to List</el-button>
           </div>
         </el-card>
       </el-main>
-      <el-footer></el-footer>
     </el-container>
 
-    <!-- 添加帖子的 Drawer -->
-    <el-drawer title="Add Post" :visible.sync="drawerVisible" :with-header="false">
-      <el-form :model="newPost" label-position="top">
+    <!-- 新帖子抽屉 -->
+    <el-drawer title="Add Post" :visible.sync="drawerVisible" direction="rtl">
+      <el-form ref="newPostForm" :model="newPost">
         <el-form-item label="Title">
           <el-input v-model="newPost.title"></el-input>
         </el-form-item>
         <el-form-item label="Content">
           <el-input type="textarea" v-model="newPost.content"></el-input>
         </el-form-item>
-        <el-form-item label="Author">
-          <el-input v-model="newPost.author"></el-input>
-        </el-form-item>
+        <el-upload
+          action="http://127.0.0.1:5000/upload"
+          list-type="picture-card"
+          :on-success="handleImageUpload"
+          :file-list="newPost.images"
+        >
+          <i class="el-icon-plus"></i>
+        </el-upload>
         <el-button type="primary" @click="addPost">Submit</el-button>
-        <el-button @click="closeDrawer">Cancel</el-button>
       </el-form>
     </el-drawer>
   </div>
@@ -82,86 +138,117 @@ export default {
       posts: [],
       selectedPost: null,
       comments: [],
-      newComment: {
-        author: '',
-        text: ''
-      },
       newPost: {
         title: '',
         content: '',
-        author: ''
+        images: []
       },
-      drawerVisible: false
+      newComment: {
+        text: '',
+        images: []
+      },
+      drawerVisible: false,
+      loggedIn: false,
+      username: '',
+      searchKeyword: ''
     };
   },
-  mounted() {
-    this.fetchPosts();
+  computed: {
+    userAvatarSrc() {
+      return `https://ui-avatars.com/api/?name=${this.username}&background=random`;
+    }
   },
   methods: {
-    fetchPosts() {
-      axios.get('http://127.0.0.1:5000/api/posts')
-        .then(response => {
-          this.posts = response.data.posts;
-        })
+    async fetchPosts() {
+      const response = await axios.get('http://127.0.0.1:5000/api/posts');
+      this.posts = response.data.posts;
+      console.log(this.posts)
     },
-    showPostDetails(post) {
+    async search() {
+      const response = await axios.get('http://127.0.0.1:5000/api/posts', {
+        params: { search: this.searchKeyword }
+      });
+      this.posts = response.data.posts;
+    },
+    async reset() {
+      this.searchKeyword = '';
+      this.fetchPosts();
+    },
+    async addPost() {
+      const response = await axios.post('http://127.0.0.1:5000/api/posts', this.newPost);
+      this.posts.push(response.data.post);
+      this.drawerVisible = false;
+      this.newPost = { title: '', content: '', images: [] };
+    },
+    async showPostDetails(post) {
       this.selectedPost = post;
-      this.fetchComments(post.id);
+      const response = await axios.get(`http://127.0.0.1:5000/api/posts/${post.id}/comments`);
+      this.comments = response.data.comments;
     },
-    fetchComments(postId) {
-      axios.get(`http://127.0.0.1:5000/api/posts/${postId}/comments`)
-        .then(response => {
-          this.comments = response.data.comments;
-        })
+    async addComment() {
+      if (this.username === ''){
+        this.$message({
+          message: 'please log in',
+          type: 'warning'
+        });
+      }else{
+      const response = await axios.post(`http://127.0.0.1:5000/api/posts/${this.selectedPost.id}/comments`, this.newComment);
+      this.comments.push(response.data.comment);
+      this.newComment = { text: '', images: [] };
+      }
     },
-    goBack() {
+    async login(username, password) {
+      const response = await axios.post('http://127.0.0.1:5000/api/login', { username, password });
+      if (response.data.message === 'Logged in successfully') {
+        this.loggedIn = true;
+        this.username = response.data.username;
+      }
+    },
+    async logout() {
+      await axios.post('http://127.0.0.1:5000/api/logout');
+      this.loggedIn = false;
+      this.username = '';
+    },
+    goToLogin() {
+      this.$router.push({ name: 'Login' });
+    },
+    backToList() {
       this.selectedPost = null;
-      this.comments = [];
-    },
-    addComment() {
-      axios.post(`http://127.0.0.1:5000/api/posts/${this.selectedPost.id}/comments`, {
-          author: this.newComment.author,
-          text: this.newComment.text
-        })
-        .then(response => {
-          this.comments.push(response.data.comment);
-          this.newComment.text = '';
-        })
     },
     showDrawer() {
+      if (this.username === ''){
+        this.$message({
+          message: 'please log in',
+          type: 'warning'
+        });
+      }else{
       this.drawerVisible = true;
+      }
     },
-    closeDrawer() {
-      this.drawerVisible = false;
+    handleImageUpload(response, file, fileList) {
+      this.newPost.images.push({ id: file.uid, url: response.url });
     },
-    addPost() {
-      axios.post('http://127.0.0.1:5000/api/posts', this.newPost)
-        .then(response => {
-          this.posts.push(response.data.post);
-          this.newPost.title = '';
-          this.newPost.content = '';
-          this.newPost.author = '';
-          this.drawerVisible = false;
-        })
+    handleCommentImageUpload(response, file, fileList) {
+      this.newComment.images.push({ id: file.uid, url: response.url });
     }
+  },
+  async mounted() {
+    this.fetchPosts();
   }
 };
 </script>
 
 <style scoped>
+.el-header {
+  background-color: #e2e2e2;
+  color: #333;
+  line-height: 15px;
+}
 .post-details {
-  margin-top: 20px;
   padding: 20px;
 }
-
-.post-details h2 {
-  margin-bottom: 10px;
-}
-
 .comment {
-  margin-top: 20px;
-  border-top: 1px solid #ccc;
-  padding-top: 10px;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
 }
 </style>
-
