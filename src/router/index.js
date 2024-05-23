@@ -24,14 +24,15 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: Login
+    component: Login,
+    props: true
   },
   {
     path: '/',
     name: 'forum',
-    component: Forum
+    component: Forum,
+    props: true
   }
-
 
 ]
 

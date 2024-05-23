@@ -12,15 +12,14 @@
           ></el-input>
           <el-button type="primary" @click="search">search</el-button>
           <el-button type="primary" @click="reset">reset</el-button>
-          <span v-if="loggedIn" style="margin-left: 40% ">
+          <span v-if="loggedIn" style="float: right; margin-top: 10px; margin-right: 1opx;">
             <el-avatar :size="40" :src="userAvatarSrc" style="margin-right: 10px; vertical-align: middle;"></el-avatar>
-            <span>{{ username }}</span>
-            <el-button type="text" @click="logout">Logout</el-button>
+            <span style=" margin-right: 20px;">{{ username }}</span>
+            <el-button type="primary" @click="logout">Logout</el-button>
           </span>
-          <span v-else style="margin-left: 50% ">
+          <span v-else style="float: right; margin-top: 10px; margin-right: 1opx;">
             <el-avatar :size="40" icon="el-icon-user" style="margin-right: 10px; vertical-align: middle;"></el-avatar>
             <el-button type="primary" @click="goToLogin">login</el-button>
-            <router-view @login-success="handleLoginSuccess" />
           </span>
         </div>
       </el-header>
@@ -93,13 +92,15 @@
               placeholder="Add a comment"
             ></el-input>
             <el-upload
-              action="http://127.0.0.1:5000/upload"
-              list-type="picture-card"
-              :on-success="handleCommentImageUpload"
-              :file-list="newComment.images"
-            >
-              <i class="el-icon-plus"></i>
-            </el-upload>
+            action="http://127.0.0.1:5000/upload"
+            list-type="picture-card"
+            :on-success="handleCommentImageUpload"
+            :file-list="newComment.images"
+            multiple
+            :before-upload="beforeImageUpload"
+          >
+            <i class="el-icon-plus"></i>
+          </el-upload>
             <el-button type="primary" @click="addComment">Submit</el-button>
             <el-button @click="backToList">Back to List</el-button>
           </div>
@@ -109,7 +110,7 @@
 
     <!-- 新帖子抽屉 -->
     <el-drawer title="Add Post" :visible.sync="drawerVisible" direction="rtl">
-      <el-form ref="newPostForm" :model="newPost">
+      <el-form ref="newPostForm" :model="newPost" style="margin:20px;">
         <el-form-item label="Title">
           <el-input v-model="newPost.title"></el-input>
         </el-form-item>
@@ -117,11 +118,13 @@
           <el-input type="textarea" v-model="newPost.content"></el-input>
         </el-form-item>
         <el-upload
-          action="http://127.0.0.1:5000/upload"
-          list-type="picture-card"
-          :on-success="handleImageUpload"
-          :file-list="newPost.images"
-        >
+            action="http://127.0.0.1:5000/upload"
+            list-type="picture-card"
+            :on-success="handleImageUpload"
+            :file-list="newPost.images"
+            multiple
+            :before-upload="beforeImageUpload"
+          >
           <i class="el-icon-plus"></i>
         </el-upload>
         <el-button type="primary" @click="addPost">Submit</el-button>
@@ -132,6 +135,7 @@
 
 <script>
 import axios from 'axios';
+import { locale } from 'core-js/web/immediate';
 
 export default {
   name:'Forum',
@@ -143,11 +147,13 @@ export default {
       newPost: {
         title: '',
         content: '',
-        images: []
+        images: [],
+        author:''
       },
       newComment: {
         text: '',
-        images: []
+        images: [],
+        author:''
       },
       drawerVisible: false,
       loggedIn: false,
@@ -176,10 +182,20 @@ export default {
       this.fetchPosts();
     },
     async addPost() {
+      if (this.username === ''){
+        this.$message({
+          message: 'please log in',
+          type: 'warning'
+        });
+      }else{
+      const jwtToken = localStorage.getItem('jwtToken')
+      axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
       const response = await axios.post('http://127.0.0.1:5000/api/posts', this.newPost);
       this.posts.push(response.data.post);
       this.drawerVisible = false;
-      this.newPost = { title: '', content: '', images: [] };
+      this.$message({message: 'success',type: 'success'});
+      this.newPost = { title: '', content: '', images: [] , author:this.username};
+      }
     },
     async showPostDetails(post) {
       this.selectedPost = post;
@@ -193,25 +209,32 @@ export default {
           type: 'warning'
         });
       }else{
+      const jwtToken = localStorage.getItem('jwtToken')
+      axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
       const response = await axios.post(`http://127.0.0.1:5000/api/posts/${this.selectedPost.id}/comments`, this.newComment);
       this.comments.push(response.data.comment);
-      this.newComment = { text: '', images: [] };
+      this.$message({message: 'success',type: 'success'});
+      this.newComment = { text: '', images: [] , author:this.username};
       }
-    },
-    async login(username, password) {
-      const response = await axios.post('http://127.0.0.1:5000/api/login', { username, password });
-      if (response.data.message === 'Logged in successfully') {
-        this.loggedIn = true;
-        this.username = response.data.username;
-      }
-    },
-    handleLoginSuccess(username) {
-      console.log('Logged in as:', username);  // 处理接收到的数据
     },
     async logout() {
-      await axios.post('http://127.0.0.1:5000/api/logout');
-      this.loggedIn = false;
-      this.username = '';
+      const jwtToken = localStorage.getItem('jwtToken')
+      axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
+      axios.post('http://127.0.0.1:5000/api/logout').then(response => {
+        this.$message({
+          message: 'logout success',
+          type: 'success'
+        });
+        localStorage.removeItem('username');
+        localStorage.removeItem('jwtToken')
+        this.loggedIn = false;
+        this.username = '';
+        this.newPost.author = this.username;
+        this.newComment.author = this.username;
+    })
+    .catch(error => {
+        console.error('Logout failed:', error);
+    });
     },
     goToLogin() {
       this.$router.push('/login')
@@ -229,15 +252,30 @@ export default {
       this.drawerVisible = true;
       }
     },
-    handleImageUpload(response, file, fileList) {
-      this.newPost.images.push({ id: file.uid, url: response.url });
+    handleImageUpload(res, file) {
+      this.newPost.images.push({ name: res.name ,url: URL.createObjectURL(file.raw)});
     },
-    handleCommentImageUpload(response, file, fileList) {
-      this.newComment.images.push({ id: file.uid, url: response.url });
-    }
+    handleCommentImageUpload(res, file) {
+      this.newComment.images.push({ name: res.name ,url: URL.createObjectURL(file.raw)});
+    },
+    beforeImageUpload(file) {
+      const isImage = file.type.startsWith('image/');
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isImage) {
+        this.$message.error('只能上传图片格式文件');
+      }
+      if (!isLt5M) {
+        this.$message.error('图片大小不能超过 5MB');
+      }
+      return isImage && isLt5M;
+    },
   },
   async mounted() {
     this.fetchPosts();
+    this.username = localStorage.getItem('username');
+    this.loggedIn = !!this.username;
+    this.newPost.author = this.username;
+    this.newComment.author = this.username;
   }
 };
 </script>
