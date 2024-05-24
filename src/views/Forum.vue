@@ -23,7 +23,13 @@
           </span>
         </div>
       </el-header>
-      <el-main>
+      <el-container style="display: flex;flex-direction: row-reverse;">
+      <el-aside width="25%">
+        <el-card style="margin: 20px;">
+          <HotSearches />
+        </el-card>
+      </el-aside>
+      <el-main width="75%">
         <!-- 帖子列表 -->
         <el-card v-if="!selectedPost">
           <div slot="header" class="clearfix">
@@ -107,6 +113,7 @@
         </el-card>
       </el-main>
     </el-container>
+    </el-container>
 
     <!-- 新帖子抽屉 -->
     <el-drawer title="Add Post" :visible.sync="drawerVisible" direction="rtl">
@@ -136,6 +143,7 @@
 <script>
 import axios from 'axios';
 import { locale } from 'core-js/web/immediate';
+import HotSearches from '../components/HotSearches.vue';
 
 export default {
   name:'Forum',
@@ -165,6 +173,9 @@ export default {
     userAvatarSrc() {
       return `https://ui-avatars.com/api/?name=${this.username}&background=random`;
     }
+  },
+  components: {
+    HotSearches
   },
   methods: {
     async fetchPosts() {
