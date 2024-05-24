@@ -4,6 +4,7 @@ import VueRouter from 'vue-router'
 // import AboutView from '../views/AboutView.vue'
 import Login from '../views/Login.vue'
 import Forum from '../views/Forum.vue'
+import Register from '../views/Register.vue'
 
 Vue.use(VueRouter)
 
@@ -32,7 +33,14 @@ const routes = [
     name: 'forum',
     component: Forum,
     props: true
-  }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: Register,
+    props: true
+  },
+
 
 ]
 

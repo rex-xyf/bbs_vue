@@ -12,6 +12,8 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="login">Login</el-button>
+        <el-button @click="goRegister" type="text">Register</el-button>
+        <el-button @click="goMain" type="text">Back to Forum</el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -65,6 +67,15 @@ export default {
         }
       }
     },
+    goRegister(){
+      localStorage.setItem('refreshed','false')
+      this.$router.push({ name: 'register' });
+    },
+    goMain(){
+      localStorage.setItem('refreshed','false')
+      this.$router.push({ name: 'forum' });
+    }
+    
     },
     mounted() {
     // 检查 localStorage 中是否存在已刷新标志
