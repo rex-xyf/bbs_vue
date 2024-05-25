@@ -76,6 +76,16 @@
             <p>Posted at: {{ selectedPost.created_time }}</p>
             <el-divider></el-divider>
             <h3>Comments</h3>
+            <div v-if="aiCommentLoading" class="comment">
+              <p style="color: #409EFF;">Loading AI comment...</p>
+            </div>
+            <div v-else-if="aiComment" class="comment">
+              <p style="color: #409EFF;">{{ aiComment.content }}</p>
+              <p style="color: #409EFF;">Comment by Ai</p>
+            </div>
+            <div v-else class="comment">
+              <p style="color: #409EFF;">No AI comment available.</p>
+            </div>
             <div class="comment" v-for="(comment, index) in comments" :key="index">
               <p>{{ comment.text }}</p>
               <div v-for="image in comment.images" :key="image.id" style=" width: 150px;height: 150px;overflow: hidden; 
@@ -163,6 +173,8 @@ export default {
         images: [],
         author:''
       },
+      aicomments: null,
+      aiCommentLoading: true,
       drawerVisible: false,
       loggedIn: false,
       username: '',
@@ -206,12 +218,25 @@ export default {
       this.drawerVisible = false;
       this.$message({message: 'success',type: 'success'});
       this.newPost = { title: '', content: '', images: [] , author:this.username};
+      await axios.post('http://127.0.0.1:8082/api/getChat', response.data.post);
       }
     },
     async showPostDetails(post) {
       this.selectedPost = post;
       const response = await axios.get(`http://127.0.0.1:5000/api/posts/${post.id}/comments`);
       this.comments = response.data.comments;
+      try {
+        const res = await axios.get(`http://127.0.0.1:8082/api/posts/${this.selectedPost.id}/aiComments`);
+        if (res.data && Object.keys(res.data).length > 0) {
+          this.aiComment = res.data;
+        } else {
+          this.aiComment = null;
+        }
+      } catch (error) {
+        console.error("Error loading AI comment:", error);
+      } finally {
+        this.aiCommentLoading = false; // 数据加载完成，设置加载状态为 false
+      }
     },
     async addComment() {
       if (this.username === '' || this.loggedIn === false){
@@ -252,6 +277,8 @@ export default {
     },
     backToList() {
       this.selectedPost = null;
+      this.aicomments = null;
+      this.aiCommentLoading = true;
     },
     showDrawer() {
       if (this.username === '' || this.loggedIn === false){
