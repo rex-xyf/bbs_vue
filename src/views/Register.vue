@@ -27,6 +27,7 @@
         <el-form-item>
           <el-button type="primary" @click="register">Register</el-button>
           <el-button @click="goLogin" type="text">go back to login</el-button>
+          <el-button @click="openMessage" icon="el-icon-question" type="text"></el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -135,7 +136,13 @@
       goLogin(){
       localStorage.setItem('refreshed','false')
       this.$router.push({ name: 'login' });
-      }
+      },
+      openMessage() {
+        this.$notify.info({
+          title: 'message',
+          message: 'Username and Password must be 6-15 characters and can only contain letters (case insensitive), numbers, ".", and "_"'
+        });
+      },
     }
   };
   </script>

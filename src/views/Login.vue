@@ -1,6 +1,7 @@
 <template>
   <div class="login-container">
     <el-form ref="loginForm" :model="loginForm" class="login-form">
+      <h1>Login</h1>
       <el-form-item label="Username">
         <el-input v-model="loginForm.username" placeholder="Username" required></el-input>
       </el-form-item>

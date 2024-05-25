@@ -193,7 +193,7 @@ export default {
       this.fetchPosts();
     },
     async addPost() {
-      if (this.username === ''){
+      if (this.username === '' || this.loggedIn === false){
         this.$message({
           message: 'please log in',
           type: 'warning'
@@ -214,7 +214,7 @@ export default {
       this.comments = response.data.comments;
     },
     async addComment() {
-      if (this.username === ''){
+      if (this.username === '' || this.loggedIn === false){
         this.$message({
           message: 'please log in',
           type: 'warning'
@@ -254,7 +254,7 @@ export default {
       this.selectedPost = null;
     },
     showDrawer() {
-      if (this.username === ''){
+      if (this.username === '' || this.loggedIn === false){
         this.$message({
           message: 'please log in',
           type: 'warning'
