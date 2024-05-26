@@ -44,9 +44,8 @@
               display: inline-block; margin-right: 20px;">
                 <el-image
                                 style="width: 100%; height: auto; object-fit: cover;"
-                                :src="require('../img/'+image.url)"
-                                :preview-src-list="[require('../img/'+image.url)]"
-                                
+                                :src="image.url"
+                                :preview-src-list="[image.url]"      
                         >
                 </el-image>
               </div>
@@ -66,9 +65,8 @@
               display: inline-block; margin-right: 20px;">
                 <el-image
                                 style="width: 100%; height: auto; object-fit: cover;"
-                                :src="require('../img/'+image.url)"
-                                :preview-src-list="[require('../img/'+image.url)]"
-                                
+                                :src="image.url"
+                                :preview-src-list="[image.url]"   
                         >
                 </el-image>
             </div>
@@ -92,9 +90,8 @@
               display: inline-block; margin-right: 20px;">
                 <el-image
                                 style="width: 100%; height: auto; object-fit: cover;"
-                                :src="require('../img/'+image.url)"
-                                :preview-src-list="[require('../img/'+image.url)]"
-                                
+                                :src="image.url"
+                                :preview-src-list="[image.url]"   
                         >
                 </el-image>
               </div>
@@ -108,7 +105,7 @@
               placeholder="Add a comment"
             ></el-input>
             <el-upload
-            action="http://127.0.0.1:5000/upload"
+            action="http://127.0.0.1:8083/upload"
             list-type="picture-card"
             :on-success="handleCommentImageUpload"
             :file-list="newComment.images"
@@ -135,7 +132,7 @@
           <el-input type="textarea" v-model="newPost.content"></el-input>
         </el-form-item>
         <el-upload
-            action="http://127.0.0.1:5000/upload"
+            action="http://127.0.0.1:8083/upload"
             list-type="picture-card"
             :on-success="handleImageUpload"
             :file-list="newPost.images"
@@ -191,11 +188,11 @@ export default {
   },
   methods: {
     async fetchPosts() {
-      const response = await axios.get('http://127.0.0.1:5000/api/posts');
+      const response = await axios.get('http://127.0.0.1:8083/api/posts');
       this.posts = response.data.posts;
     },
     async search() {
-      const response = await axios.get('http://127.0.0.1:5000/api/posts', {
+      const response = await axios.get('http://127.0.0.1:8083/api/posts', {
         params: { search: this.searchKeyword }
       });
       this.posts = response.data.posts;
@@ -213,7 +210,7 @@ export default {
       }else{
       const jwtToken = localStorage.getItem('jwtToken')
       axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
-      const response = await axios.post('http://127.0.0.1:5000/api/posts', this.newPost);
+      const response = await axios.post('http://127.0.0.1:8083/api/posts', this.newPost);
       this.posts.push(response.data.post);
       this.drawerVisible = false;
       this.$message({message: 'success',type: 'success'});
@@ -223,7 +220,7 @@ export default {
     },
     async showPostDetails(post) {
       this.selectedPost = post;
-      const response = await axios.get(`http://127.0.0.1:5000/api/posts/${post.id}/comments`);
+      const response = await axios.get(`http://127.0.0.1:8083/api/posts/${post.id}/comments`);
       this.comments = response.data.comments;
       try {
         const res = await axios.get(`http://127.0.0.1:8082/api/posts/${this.selectedPost.id}/aiComments`);
@@ -247,7 +244,7 @@ export default {
       }else{
       const jwtToken = localStorage.getItem('jwtToken')
       axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
-      const response = await axios.post(`http://127.0.0.1:5000/api/posts/${this.selectedPost.id}/comments`, this.newComment);
+      const response = await axios.post(`http://127.0.0.1:8083/api/posts/${this.selectedPost.id}/comments`, this.newComment);
       this.comments.push(response.data.comment);
       this.$message({message: 'success',type: 'success'});
       this.newComment = { text: '', images: [] , author:this.username};
@@ -256,7 +253,7 @@ export default {
     async logout() {
       const jwtToken = localStorage.getItem('jwtToken')
       axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
-      axios.post('http://127.0.0.1:5000/api/logout').then(response => {
+      axios.post('http://127.0.0.1:8085/api/logout').then(response => {
         this.$message({
           message: 'logout success',
           type: 'success'

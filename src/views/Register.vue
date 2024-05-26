@@ -86,7 +86,7 @@
 
         try {
           this.registerForm.email = `${this.registerForm.emailFont}${this.emailSuffix}`;
-          const response = await axios.post('http://127.0.0.1:5000/api/register', this.registerForm);
+          const response = await axios.post('http://127.0.0.1:8084/api/register', this.registerForm);
           if (response.data.success) {
             this.$message.success('Registration successful');
             // Redirect to login page or other page
@@ -125,7 +125,7 @@
         }
         this.registerForm.email = `${this.registerForm.emailFont}${this.emailSuffix}`;
         // Implement verification code logic here
-        const response = await axios.post('http://127.0.0.1:5000/api/send_verification_code', this.registerForm);
+        const response = await axios.post('http://127.0.0.1:8084/api/send_verification_code', this.registerForm);
         if (response.data.success) {
             this.showVerificationCode = true;
             this.$message.success('Verification code sent successfully');
